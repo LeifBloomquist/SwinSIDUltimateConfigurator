@@ -1,7 +1,7 @@
 	processor 6502
 	org $0801
 
-	; SwimSID Ultimate Configurator Tool
+	; SwinSID Ultimate Configurator Tool
 	; Schema / AIC
   
 SID = $D400
@@ -20,27 +20,73 @@ START	SUBROUTINE
   jsr MENUSCREEN  
     
 CHECKKEYS 
+  jsr SHOWSETTINGS
+  
+wait
   jsr GETIN
-  beq CHECKKEYS
+  beq wait
   
   sta $c000  ;Debug
   
   ; Check for special keys
+
+f3
+  cmp #$86    ; F3
+  bne f5
+  jsr WAVETABLES
+  jmp CHECKKEYS
+
+f5  
   cmp #$87    ; F5
+  bne f7
+  jmp START
+  
+f7  
+  cmp #$88    ; F7
   bne back
-  jsr MENUSCREEN ; Refreshes
+  jsr SETDEFAULTS
   jmp CHECKKEYS
 
 back  
   cmp #$5F    ; Back-Arrow
-  bne up
+  bne reset
   jmp EXIT    ; Note jmp for return to BASIC by rts
+  
+reset
+   cmp #'T     ; Handle reset specially, don't re-draw settings (interrupts beep)
+   bne zero
+   jsr SENDCOMMAND
+   jmp wait
+   
+zero
+   cmp #'0    
+   bne one
+   jsr MUTE0
+   jmp CHECKKEYS
+   
+one
+   cmp #'1    
+   bne two
+   jsr MUTE1
+   jmp CHECKKEYS
+   
+two
+   cmp #'2    
+   bne three
+   jsr MUTE2
+   jmp CHECKKEYS
 
-up  
-  cmp #$5E    ; Up-Arrow
-  bne others
-  jsr SETDEFAULTS
-  jmp CHECKKEYS
+three
+   cmp #'3    
+   bne four
+   jsr MUTE3
+   jmp CHECKKEYS
+
+four
+   cmp #'4    
+   bne others
+   jsr MUTE4
+   jmp CHECKKEYS
   
 ; All others, pass-through as a command and keep checking
 others  
@@ -52,26 +98,31 @@ others
 SETDEFAULTS
   lda #'8  
   jsr SENDCOMMAND
+  jsr DELAY
   
   lda #'D  
   jsr SENDCOMMAND
+  jsr DELAY
   
   lda #'F  
-  jsr SENDCOMMAND  
+  jsr SENDCOMMAND
+  jsr DELAY  
     
   lda #'N
   jsr SENDCOMMAND
+  jsr DELAY
   
   lda #'L  
   jsr SENDCOMMAND
+  jsr DELAY
 
   lda #'B  
   jsr SENDCOMMAND
+  jsr DELAY
   
-  lda $00  
+  lda #$00  
   jsr SETMUTE
-
-  jsr MENUSCREEN
+  jsr DELAY
   
   rts 
  
@@ -95,11 +146,7 @@ READCONFIG
   sty SID+30
   sta SID+31
 
-  ldx #50
-loop
-  nop
-  dex
-  bne loop
+  jsr DELAY
   
   ldx SID+27
   ldy SID+28
@@ -115,16 +162,59 @@ config
 ; Set Mute Bitmask, in A
 SETMUTE
   sta SID+31  ; Do this first!
-  sta mute_shadow 
+  sta mute_shadow
+  
+  ldx #$FF     ; Clear config
+  stx SID+29
+  stx SID+30
+  jsr DELAY
+   
   ldx #83 ; S
   ldy #77 ; M
   stx SID+29
-  sty SID+30 
+  sty SID+30
+  jsr DELAY 
   rts
   
 mute_shadow
   .byte 00
- 
+  
+;---------------------------------------------------------------
+; Muting various channels 
+MUTE0  ; None
+   lda #$00
+   jsr SETMUTE
+   rts
+
+MUTE1  ; Voice 1
+   lda mute_shadow
+   ora #%00000001
+   jsr SETMUTE
+   rts
+
+MUTE2  ; Voice 2
+   lda mute_shadow
+   ora #%00000010
+   jsr SETMUTE
+   rts
+
+MUTE3  ; Voice 4
+   lda mute_shadow
+   ora #%00000100
+   jsr SETMUTE
+   rts  
+   
+MUTE4  ; Digis
+   lda mute_shadow
+   ora #%00001000
+   jsr SETMUTE
+   rts    
+
+;---------------------------------------------------------------
+; To-Do: Enter Custom WaveTable
+WAVETABLES
+   rts
+
 ;---------------------------------------------------------------
 ; Read+Print Config Parameter as ASCII value in A
 ; Params stored to config
@@ -138,9 +228,6 @@ PRINTCONFIG
   
 ;---------------------------------------------------------------
 MENUSCREEN 
-  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.1", CRLF, CRLF
-  
-  jsr SEPARATOR
   jsr SHOWSETTINGS 
   jsr SEPARATOR  
   
@@ -150,23 +237,26 @@ MENUSCREEN
   PRINT CG_BLU, "sAMPLING:   ", CG_YEL, "e", CG_LBL, "NABLE / ", CG_YEL, "f", CG_LBL, "INISHED ", CG_WHT, "*", CRLF
   PRINT CG_BLU, "led mODE:   ", CG_YEL, "n", CG_LBL, "OTE   / ", CG_YEL, "i", CG_LBL, "NVERTED / ", CG_YEL, "r", CG_LBL, "w", CRLF
   PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b", CG_LBL, "EEP   / ", CG_YEL, "m", CG_LBL, "UTE", CRLF
-  PRINT CG_BLU, "mUTE:       ", CG_LBL, "cHANNEL ", CG_YEL, "1", CG_LBL, " /", CG_YEL, " 2", CG_LBL, " /", CG_YEL, " 3", CG_YEL, " / ", CG_YEL, "4", CG_LBL, "=dIGI", CRLF
+  PRINT CG_BLU, "mUTE:       ", CG_LBL, "nONE=", CG_YEL, "0", CG_LBL, " / ", CG_YEL, "1", CG_LBL, " / ", CG_YEL, "2", CG_LBL, " / ", CG_YEL, "3", CG_LBL, " / ", CG_YEL, "4", CG_LBL, "=dIGI", CRLF
+  PRINT CG_BLU, "            ", CG_LBL, "rE-iNI", CG_YEL,"t", CG_LBL, " cHIP", CRLF
   PRINT CG_WHT, "            *", CG_GR2, " rEQUIRES rE-iNIT", CRLF, CRLF
-  PRINT CG_BLU, "            ", CG_LBL, "rE-iNI", CG_YEL,"T", CG_LBL, " cHIP", CRLF
-  PRINT CG_YEL, "            f5",CG_LBL, " rEFRESH", CRLF
-  PRINT CG_YEL, "            ", $5E ,CG_LBL, "  sET dEFAULTS", CRLF  
+
+  PRINT CG_GR1, "            f3", CG_GR1, " lOAD wAVETABLE (FUTURE)", CRLF
+  PRINT CG_YEL, "            f5", CG_LBL, " rEFRESH", CRLF
+  PRINT CG_YEL, "            f7", CG_LBL, " sET dEFAULTS", CRLF  
   PRINT CG_YEL, "            ", $5F ,CG_LBL, "  eXIT pROGRAM", CRLF
-   
-  ; To-Do: Enter Custom WaveTable
    
   jsr SEPARATOR     
          
-  PRINT CRLF, CG_BLU, "                             sCHEMA/aic", CS_HOM
+  PRINT CRLF, CG_LGN, "                             sCHEMA/aic", CS_HOM
   rts
   
   
 ;---------------------------------------------------------------
 SHOWSETTINGS
+  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.1", CRLF, CRLF
+    
+  jsr SEPARATOR
   PRINT CG_RED, "iDENTIFICATION: ", CG_PNK
   lda #'D
   jsr PRINTCONFIG
@@ -225,7 +315,16 @@ EXIT
   sty SID+30
   sta SID+31 
   
-  PRINT CG_CLR, CG_WHT
+  PRINT CG_CLR, CG_UCS, CG_WHT
+  rts
+
+;---------------------------------------------------------------
+DELAY
+  ldx #50
+loop
+  nop
+  dex
+  bne loop
   rts
 
 ;---------------------------------------------------------------
