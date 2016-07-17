@@ -23,24 +23,9 @@ READST = $ffb7
 LOAD   = $ffd5
 SAVE   = $ffd8
 
-;zeropage addresses
-DHCP_PTR = $55 ;(2)
-RECV_PTR = $57 ;(2)
-XMIT_PTR = $59 ;(2)
-RECV_LEN = $5b ;(2)
-XMIT_LEN = $5d ;(2)
-DNS_TMP	 = $5f ;(2)
-IPM_TMP  = $61 ;(2)
-CPY_SRC  = $63 ;(2)
-CPY_DST  = $65 ;(2)
-SAV_PTR  = $67 ;(2)
-
 ;utils zeropage
 INPUT_PTR = $67 ;(2)
 INPUT_Y	  = $69 ;(1)
-
-;checksum zeropage
-MakeChecksumZp_Ptr = $6a ;(2)
 
 ;c64 c/g 
 CG_BLK = 144

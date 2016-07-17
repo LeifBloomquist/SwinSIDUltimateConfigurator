@@ -16,7 +16,8 @@ START	SUBROUTINE
   lda #$00
   sta $d020
   sta $d021
-  jsr MENUSCREEN
+  PRINT CG_CLR
+  jsr MENUSCREEN  
     
 CHECKKEYS 
   jsr GETIN
@@ -25,7 +26,12 @@ CHECKKEYS
   sta $c000  ;Debug
   
   ; Check for special keys
-  
+  cmp #$87    ; F5
+  bne back
+  jsr MENUSCREEN ; Refreshes
+  jmp CHECKKEYS
+
+back  
   cmp #$5F    ; Back-Arrow
   bne up
   jmp EXIT    ; Note jmp for return to BASIC by rts
@@ -34,60 +40,175 @@ up
   cmp #$5E    ; Up-Arrow
   bne others
   jsr SETDEFAULTS
+  jmp CHECKKEYS
   
 ; All others, pass-through as a command and keep checking
-others
-  
+others  
   jsr SENDCOMMAND
   jmp CHECKKEYS
 
 
 ;---------------------------------------------------------------
 SETDEFAULTS
-  lda #$00 
+  lda #'8  
   jsr SENDCOMMAND
+  
+  lda #'D  
+  jsr SENDCOMMAND
+  
+  lda #'F  
+  jsr SENDCOMMAND  
+    
+  lda #'N
+  jsr SENDCOMMAND
+  
+  lda #'L  
+  jsr SENDCOMMAND
+
+  lda #'B  
+  jsr SENDCOMMAND
+  
+  lda $00  
+  jsr SETMUTE
+
+  jsr MENUSCREEN
+  
   rts 
  
 ;---------------------------------------------------------------
+; Command as ASCII value in A
 SENDCOMMAND
-  ldx #83 ; s
-  ldy #69 ; i
+  ldx #83 ; S
+  ldy #69 ; E
   stx SID+29
   sty SID+30
   sta SID+31 
   rts
 
 ;---------------------------------------------------------------
+; Read Config Parameter as ASCII value in A
+; Result stored to config
+READCONFIG
+  ldx #83 ; S
+  ldy #73 ; I
+  stx SID+29
+  sty SID+30
+  sta SID+31
+
+  ldx #50
+loop
+  nop
+  dex
+  bne loop
+  
+  ldx SID+27
+  ldy SID+28
+  stx config
+  sty config+1
+     
+  rts
+  
+config
+  .byte 00, 00
+  
+;---------------------------------------------------------------
+; Set Mute Bitmask, in A
+SETMUTE
+  sta SID+31  ; Do this first!
+  sta mute_shadow 
+  ldx #83 ; S
+  ldy #77 ; M
+  stx SID+29
+  sty SID+30 
+  rts
+  
+mute_shadow
+  .byte 00
+ 
+;---------------------------------------------------------------
+; Read+Print Config Parameter as ASCII value in A
+; Params stored to config
+PRINTCONFIG
+  jsr READCONFIG
+  lda config
+  jsr CHROUT    
+  lda config+1
+  jsr CHROUT
+  rts  
+  
+;---------------------------------------------------------------
 MENUSCREEN 
-  PRINT CG_CLR,CG_DCS, CG_LCS, CG_YEL,"sWIN",CG_RED,"sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.1", CRLF, CRLF
+  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.1", CRLF, CRLF
   
   jsr SEPARATOR
+  jsr SHOWSETTINGS 
+  jsr SEPARATOR  
   
   PRINT CG_BLU, "sid tYPE:   ", CG_YEL, "6", CG_LBL, "581   / ", CG_YEL, "8", CG_LBL, "580", CRLF
-  PRINT CG_BLU, "pITCH:      ", CG_YEL, "n", CG_LBL, "tsc   / ", CG_YEL, "p", CG_LBL, "al", CRLF
+  PRINT CG_BLU, "pITCH:      ", CG_LBL, "nt", CG_YEL, "s", CG_LBL, "c   / pa", CG_YEL, "l", CRLF
   PRINT CG_BLU, "aUDIO iN:   ", CG_YEL, "a", CG_LBL, "LLOW  / ", CG_YEL, "d", CG_LBL, "ISABLE ", CG_WHT, "*", CRLF
   PRINT CG_BLU, "sAMPLING:   ", CG_YEL, "e", CG_LBL, "NABLE / ", CG_YEL, "f", CG_LBL, "INISHED ", CG_WHT, "*", CRLF
   PRINT CG_BLU, "led mODE:   ", CG_YEL, "n", CG_LBL, "OTE   / ", CG_YEL, "i", CG_LBL, "NVERTED / ", CG_YEL, "r", CG_LBL, "w", CRLF
   PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b", CG_LBL, "EEP   / ", CG_YEL, "m", CG_LBL, "UTE", CRLF
-  PRINT CG_BLU, "mUTE:       ", CG_LBL, "cHANNEL 1 / 2 / 3 / 4 ", "(dIGI)", CRLF
+  PRINT CG_BLU, "mUTE:       ", CG_LBL, "cHANNEL ", CG_YEL, "1", CG_LBL, " /", CG_YEL, " 2", CG_LBL, " /", CG_YEL, " 3", CG_YEL, " / ", CG_YEL, "4", CG_LBL, "=dIGI", CRLF
+  PRINT CG_WHT, "            *", CG_GR2, " rEQUIRES rE-iNIT", CRLF, CRLF
   PRINT CG_BLU, "            ", CG_LBL, "rE-iNI", CG_YEL,"T", CG_LBL, " cHIP", CRLF
-  PRINT CG_YEL, "            ", $5E ,CG_LBL, " sET dEFAULTS", CRLF  
-  PRINT CG_YEL, "            ", $5F ,CG_LBL, " eXIT pROGRAM", CRLF
-  PRINT CG_WHT, "            *", CG_GR2, " rEQUIRES rE-iNIT", CRLF
-  
-  ; To-Do: Enter WaveTable
+  PRINT CG_YEL, "            f5",CG_LBL, " rEFRESH", CRLF
+  PRINT CG_YEL, "            ", $5E ,CG_LBL, "  sET dEFAULTS", CRLF  
+  PRINT CG_YEL, "            ", $5F ,CG_LBL, "  eXIT pROGRAM", CRLF
+   
+  ; To-Do: Enter Custom WaveTable
    
   jsr SEPARATOR     
-  jsr SHOWSETTINGS    
-  
-  ; sCHEMA/aic",CRLF,CRLF
-  
+         
+  PRINT CRLF, CG_BLU, "                             sCHEMA/aic", CS_HOM
   rts
   
   
 ;---------------------------------------------------------------
 SHOWSETTINGS
-  rts 
+  PRINT CG_RED, "iDENTIFICATION: ", CG_PNK
+  lda #'D
+  jsr PRINTCONFIG
+  lda #'E
+  jsr PRINTCONFIG
+  
+  PRINT CG_RED, "  vERSION:    ", CG_PNK
+  lda #'V
+  jsr PRINTCONFIG   
+  PRINT CRLF
+  
+  PRINT CG_RED, "fUNCTION aS:    ", CG_PNK
+  lda #'F
+  jsr PRINTCONFIG                    
+  
+  PRINT CG_RED, "    cLOCK:      ", CG_PNK
+  lda #'C
+  jsr PRINTCONFIG
+  PRINT CRLF
+  
+  PRINT CG_RED, "led cONFIG:     ", CG_PNK
+  lda #'L
+  jsr PRINTCONFIG
+    
+  PRINT CG_RED, "    sTART bEEP: ", CG_PNK
+  lda #'B
+  jsr PRINTCONFIG
+  PRINT CRLF 
+  
+  PRINT CG_RED, "mUTE bITMASK:   ", CG_PNK, "0"
+  lda #'M
+  jsr READCONFIG  
+  ldx config+1
+  lda hex,x
+  jsr CHROUT  
+  
+  PRINT CG_RED, "    aUDIO IN:   ", CG_PNK
+  lda #'A
+  jsr PRINTCONFIG
+  PRINT CRLF
+  
+  rts
   
 ;---------------------------------------------------------------
 SEPARATOR
@@ -104,14 +225,12 @@ EXIT
   sty SID+30
   sta SID+31 
   
-  PRINT CG_WHT
+  PRINT CG_CLR, CG_WHT
   rts
 
 ;---------------------------------------------------------------
-; Map between keys and command bytes
-
-KEYS
-   .byte 00
+hex
+  .byte "0123456789abcdef"
 
 ; ------------------------------------------------
 	include "utils.asm"
