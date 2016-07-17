@@ -91,14 +91,21 @@ four
 ; All others, pass-through as a command and keep checking
 others  
   jsr SENDCOMMAND
+  jsr DELAY
   jmp CHECKKEYS
 
 
 ;---------------------------------------------------------------
-SETDEFAULTS
+SETDEFAULTS  
   lda #'8  
   jsr SENDCOMMAND
   jsr DELAY
+  jsr DELAY 
+  
+  lda #'L  
+  jsr SENDCOMMAND
+  jsr DELAY
+  jsr DELAY 
   
   lda #'D  
   jsr SENDCOMMAND
@@ -111,9 +118,6 @@ SETDEFAULTS
   lda #'N
   jsr SENDCOMMAND
   jsr DELAY
-  
-  lda #'L  
-  jsr SENDCOMMAND
   jsr DELAY
 
   lda #'B  
@@ -237,18 +241,16 @@ MENUSCREEN
   PRINT CG_BLU, "sAMPLING:   ", CG_YEL, "e", CG_LBL, "NABLE / ", CG_YEL, "f", CG_LBL, "INISHED ", CG_WHT, "*", CRLF
   PRINT CG_BLU, "led mODE:   ", CG_YEL, "n", CG_LBL, "OTE   / ", CG_YEL, "i", CG_LBL, "NVERTED / ", CG_YEL, "r", CG_LBL, "w", CRLF
   PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b", CG_LBL, "EEP   / ", CG_YEL, "m", CG_LBL, "UTE", CRLF
-  PRINT CG_BLU, "mUTE:       ", CG_LBL, "nONE=", CG_YEL, "0", CG_LBL, " / ", CG_YEL, "1", CG_LBL, " / ", CG_YEL, "2", CG_LBL, " / ", CG_YEL, "3", CG_LBL, " / ", CG_YEL, "4", CG_LBL, "=dIGI", CRLF
-  PRINT CG_BLU, "            ", CG_LBL, "rE-iNI", CG_YEL,"t", CG_LBL, " cHIP", CRLF
-  PRINT CG_WHT, "            *", CG_GR2, " rEQUIRES rE-iNIT", CRLF, CRLF
-
+  PRINT CG_BLU, "mUTE:       ", CG_LBL, "nONE=", CG_YEL,  "0", CG_LBL, " / ", CG_YEL, "1", CG_LBL, " / ", CG_YEL, "2", CG_LBL, " / ", CG_YEL, "3", CG_LBL, " / ", CG_YEL, "4", CG_LBL, "=dIGI", CRLF
+  PRINT CG_BLU, "rE-iNIT:    ", CG_LBL, "rE-iNI", CG_YEL, "t", CG_LBL, " cHIP", CRLF, CRLF
+ 
   PRINT CG_GR1, "            f3", CG_GR1, " lOAD wAVETABLE (FUTURE)", CRLF
   PRINT CG_YEL, "            f5", CG_LBL, " rEFRESH", CRLF
   PRINT CG_YEL, "            f7", CG_LBL, " sET dEFAULTS", CRLF  
   PRINT CG_YEL, "            ", $5F ,CG_LBL, "  eXIT pROGRAM", CRLF
    
   jsr SEPARATOR     
-         
-  PRINT CRLF, CG_LGN, "                             sCHEMA/aic", CS_HOM
+       
   rts
   
   
@@ -320,8 +322,9 @@ EXIT
 
 ;---------------------------------------------------------------
 DELAY
-  ldx #50
+  ldx #200
 loop
+  nop
   nop
   dex
   bne loop
