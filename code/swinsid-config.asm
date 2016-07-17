@@ -251,6 +251,7 @@ MENUSCREEN
    
   jsr SEPARATOR     
        
+  PRINT CRLF, CRLF, CG_WHT, "*", CG_GR2, " rEQUIRES rE-iNIT", CG_LGN, "           sCHEMA/aic", CS_HOM
   rts
   
   
