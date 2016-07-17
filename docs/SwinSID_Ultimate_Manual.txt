@@ -29,6 +29,7 @@ credits:
 
 
                 manual written by CodeKiller
+                minor tweaks by Schema
 
 
 
@@ -346,7 +347,7 @@ SIV ____ version: $.$ (chr$ characters)
 SIA ____ audio in status: ON / OFf
 SIC ____ clock config: PaL-NtSc(-2M todo)
 
-SIB ____ start beep mode: ENabled / DiSabled
+SIB ____ start beep mode: Beep Enabled / Beep Disabled
 SIM ____ Mute bit-mask % (binary value 0-15) (M %)
 ********************************************************
 SE* (softconfig Eprom Edit)  response bytes after #
@@ -468,4 +469,4 @@ addr: 00 01 02 03 ....
 data: 10 30 xx xx ....
 
 
-Document rev. 1.1c
+Document rev. 1.1c1
