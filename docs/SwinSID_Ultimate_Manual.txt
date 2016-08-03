@@ -401,7 +401,7 @@ Extrnal audio input / sampling
 The extenal audio input featured in original SID models too, but because this module catches more noise if not termianted properly
 it is disabled by default. But if handled with care it can be used all the time, no problem.
 
-The samppling however is not only special to this module, but overrides normal operation of the SID.
+The sampling however is not only special to this module, but overrides normal operation of the SID.
 So it can only changed in a volatile way to not interfering with normal operation in different scenarios.
 (or at least a reset can bring it back to a valid SID-compatible state)
 Sampling can be switched on only after the external audio input has been enabled. 
