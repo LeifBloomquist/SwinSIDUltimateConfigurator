@@ -85,3 +85,14 @@
    jsr ISSELECTED
    ENDM
 
+
+; ==============================================================
+; Macro for changing cursor colors for SwinSID Ultimate (Mute mask)
+; ==============================================================
+
+   MAC CHECKSELECTEDMUTE
+   ldx #{1}
+   jsr ISSELECTEDMUTE
+   ENDM
+
+

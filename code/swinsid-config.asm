@@ -274,16 +274,39 @@ MENUSCREEN
   CHECKSELECTED audioin+1, 'F
   PRINT "ISABLE ", CRLF, CRLF
   
-  ; Mute - TODO
-  PRINT CG_BLU, "mUTE:       ", CG_YEL, "0", CG_LBL, " = nO cHANNELS mUTED", CRLF
-  PRINT CG_BLU, "            ", CG_YEL, "1", CG_LBL, " = mUTE cHANNEL 1", CRLF
-  PRINT CG_BLU, "            ", CG_YEL, "2", CG_LBL, " = mUTE cHANNEL 2", CRLF
-  PRINT CG_BLU, "            ", CG_YEL, "3", CG_LBL, " = mUTE cHANNEL 3", CRLF
-  PRINT CG_BLU, "            ", CG_YEL, "4", CG_LBL, " = mUTE dIGIS", CRLF, CRLF
+  ; Mute
+  PRINT CG_BLU, "mUTE:       ", CG_YEL, "0", CG_BLU, " = "
+  lda mute_shadow
+  beq nomute
+  
+  PRINT CG_LBL
+  jmp printmute
+  
+nomute
+  PRINT CG_PNK
+  
+printmute
+  PRINT "nO cHANNELS mUTED", CRLF
+  
+  PRINT CG_BLU, "            ", CG_YEL, "1", CG_BLU, " = "
+  CHECKSELECTEDMUTE %00000001  
+  PRINT "mUTE cHANNEL 1", CRLF
+    
+  PRINT CG_BLU, "            ", CG_YEL, "2", CG_BLU, " = "
+  CHECKSELECTEDMUTE %00000010
+  PRINT "mUTE cHANNEL 2", CRLF
+  
+  PRINT CG_BLU, "            ", CG_YEL, "3", CG_BLU, " = "
+  CHECKSELECTEDMUTE %00000100
+  PRINT "mUTE cHANNEL 3", CRLF
+  PRINT CG_BLU, "            ", CG_YEL, "4", CG_BLU, " = "
+  CHECKSELECTEDMUTE %00001000
+  PRINT "mUTE dIGIS", CRLF, CRLF
 
+  ; Re-Init
   PRINT CG_BLU, "rE-iNIT:    ", CG_LBL, "rE-iNI", CG_YEL, "t", CG_LBL, " cHIP", CRLF, CRLF
  
- 
+  ; Commands
   PRINT CG_BLU, "cOMMANDS:   ", CG_YEL, "f3", CG_LBL, " sHOW cONFIG vALUES", CRLF
   PRINT CG_YEL, "            f5", CG_LBL, " rEFRESH", CRLF   
   PRINT CG_YEL, "            f7", CG_LBL, " sET dEFAULTS", CRLF  
@@ -291,7 +314,7 @@ MENUSCREEN
    
   jsr SEPARATOR     
        
-  PRINT CRLF, CG_PNK, "sELECTED ",CG_BLU, "/", CG_LBL, " dESELECTED       ",  CG_LGN, "sCHEMA/aic", CS_HOM
+  PRINT CRLF, CG_PNK, "sELECTED ",CG_BLU, "/", CG_LBL, " dESELECTED         ",  CG_LGN, "sCHEMA/aic", CS_HOM
   rts
   
   
@@ -409,7 +432,25 @@ not_selected
 
 temp
   .byte 00
-    
+ 
+;---------------------------------------------------------------
+; Change cursor color based on Mute setting
+; use from CHECKSELECTEDMUTE macro only
+ISSELECTEDMUTE
+  stx tempm
+  lda mute_shadow
+  and tempm
+  beq not_selectedm
+  
+  PRINT CG_PNK
+  rts  
+
+not_selectedm
+  PRINT CG_LBL
+  rts
+
+tempm
+  .byte 00   
 
 ;---------------------------------------------------------------
 DELAY
