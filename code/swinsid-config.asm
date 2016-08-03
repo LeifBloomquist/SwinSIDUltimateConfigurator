@@ -195,25 +195,25 @@ MUTE0  ; None
 
 MUTE1  ; Voice 1
    lda mute_shadow
-   ora #%00000001
+   eor #%00000001
    jsr SETMUTE
    rts
 
 MUTE2  ; Voice 2
    lda mute_shadow
-   ora #%00000010
+   eor #%00000010
    jsr SETMUTE
    rts
 
 MUTE3  ; Voice 4
    lda mute_shadow
-   ora #%00000100
+   eor #%00000100
    jsr SETMUTE
    rts  
    
 MUTE4  ; Digis
    lda mute_shadow
-   ora #%00001000
+   eor #%00001000
    jsr SETMUTE
    rts    
 
