@@ -17,9 +17,9 @@ START	SUBROUTINE
   sta $d020
   sta $d021
   PRINT CG_CLR
-  jsr MENUSCREEN  
     
 CHECKKEYS
+  jsr MENUSCREEN  
   
 wait
   jsr GETIN
@@ -159,6 +159,8 @@ READCONFIG
   ldy SID+28
   stx config
   sty config+1
+  
+  jsr ENDCONFIG
      
   rts
   
@@ -182,9 +184,7 @@ SETMUTE
   sty SID+30
   jsr DELAY 
   rts
-  
-mute_shadow
-  .byte 00
+
   
 ;---------------------------------------------------------------
 ; Muting various channels 
@@ -229,12 +229,17 @@ PRINTCONFIG
   rts  
   
 ;---------------------------------------------------------------
-MENUSCREEN 
-  PRINT CG_CLR,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.2", CRLF, CRLF
+MENUSCREEN
+  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.2", CRLF, CRLF
+  jsr READSETTINGS
   
   jsr SEPARATOR  
   
-  PRINT CG_BLU, "sid tYPE:   ", CG_YEL, "6", CG_LBL, "581  / ", CG_YEL, "8", CG_LBL, "580", CRLF
+  PRINT CG_BLU, "sid tYPE:   ", CG_YEL, "6", CG_LBL 
+  
+  CHECKSELECTED sidtype, '6
+  
+  PRINT "581  / ", CG_YEL, "8", CG_LBL, "580", CRLF
   PRINT CG_BLU, "pITCH:      ", CG_LBL, "nt", CG_YEL, "s", CG_LBL, "c  / pa", CG_YEL, "l", CRLF
   PRINT CG_BLU, "led mODE:   ", CG_YEL, "n", CG_LBL, "OTE  / ", CG_YEL, "i", CG_LBL, "NVERTED / ", CG_YEL, "r", CG_LBL, "w", CRLF
   PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b", CG_LBL, "EEP  / ", CG_YEL, "m", CG_LBL, "UTE", CRLF
@@ -249,14 +254,14 @@ MENUSCREEN
   PRINT CG_BLU, "rE-iNIT:    ", CG_LBL, "rE-iNI", CG_YEL, "t", CG_LBL, " cHIP", CRLF, CRLF
  
  
-  PRINT CG_BLU, "cOMMANDS:   ", CG_YEL, "f3", CG_LBL, " sHOW cONFIG", CRLF
-  PRINT CG_YEL, "            f5", CG_LBL, " rEFRESH", CRLF
+  PRINT CG_BLU, "cOMMANDS:   ", CG_YEL, "f3", CG_LBL, " sHOW cONFIG vALUES", CRLF
+  PRINT CG_YEL, "            f5", CG_LBL, " rEFRESH", CRLF   
   PRINT CG_YEL, "            f7", CG_LBL, " sET dEFAULTS", CRLF  
   PRINT CG_YEL, "            ", $5F ,CG_LBL, "  eXIT pROGRAM", CRLF
    
   jsr SEPARATOR     
        
-  PRINT CRLF, CG_LGN, "                              sCHEMA/aic", CS_HOM
+  PRINT CRLF, CG_PNK, "sELECTED ",CG_BLU, "/", CG_LBL, " dESELECTED       ",  CG_LGN, "sCHEMA/aic", CS_HOM
   rts
   
   
@@ -281,7 +286,7 @@ SHOWSETTINGS
   PRINT CG_RED, "fUNCTION aS:    ", CG_PNK
   lda #'F
   jsr PRINTCONFIG
-  PRINT CRLF                    
+  PRINT CRLF               
   
   PRINT CG_RED, "cLOCK:          ", CG_PNK
   lda #'C
@@ -291,7 +296,7 @@ SHOWSETTINGS
   PRINT CG_RED, "led cONFIG:     ", CG_PNK
   lda #'L
   jsr PRINTCONFIG
-  PRINT CRLF  
+  PRINT CRLF
     
   PRINT CG_RED, "sTART bEEP:     ", CG_PNK
   lda #'B
@@ -303,7 +308,7 @@ SHOWSETTINGS
   jsr READCONFIG  
   ldx config+1
   lda hex,x
-  jsr CHROUT  
+  jsr CHROUT   
   PRINT CRLF  
   
   PRINT CG_RED, "aUDIO IN:       ", CG_PNK
@@ -314,7 +319,7 @@ SHOWSETTINGS
   jsr SEPARATOR
   PRINT CRLF    
   
-   PRINT CG_LBL, "pRESS aNY kEY fOR mAIN mENU", CRLF
+  PRINT CG_BLU, "pRESS aNY kEY fOR mAIN mENU", CRLF
   
 wait1
   jsr GETIN
@@ -323,10 +328,58 @@ wait1
   rts
   
 ;---------------------------------------------------------------
+READSETTINGS
+
+  lda #'F
+  jsr READCONFIG
+  SAVESETTINGS sidtype              
+  
+  lda #'C
+  jsr READCONFIG  
+  SAVESETTINGS pitch  
+  
+  lda #'L
+  jsr READCONFIG
+  SAVESETTINGS ledmode  
+  
+  lda #'B
+  jsr READCONFIG
+  SAVESETTINGS beep
+  
+  lda #'M
+  jsr READCONFIG
+  SAVESETTINGS mute
+  
+  lda #'A
+  jsr READCONFIG
+  SAVESETTINGS audioin
+
+  rts
+  
+;---------------------------------------------------------------
 SEPARATOR
   PRINT CG_GR1
   PRINT $60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60,$60
   rts
+
+;---------------------------------------------------------------
+; Change cursor color based on setting
+; use from CHECKSELECTED macro only
+ISSELECTED
+  stx temp
+  cmp temp
+  bne not_selected
+  
+  PRINT CG_PNK
+  rts  
+
+not_selected
+  PRINT CG_LBL
+  rts
+
+temp
+  .byte 00
+    
 
 ;---------------------------------------------------------------
 DELAY
@@ -357,6 +410,32 @@ EXIT
 ;---------------------------------------------------------------
 hex
   .byte "0123456789abcdef"
+  
+;---------------------------------------------------------------
+; Mirrors of config registers
+  
+sidtype
+  .byte 00, 00
+
+pitch
+  .byte 00, 00
+
+ledmode
+  .byte 00, 00
+
+beep
+  .byte 00, 00
+  
+mute
+  .byte 00 
+  
+mute_shadow
+  .byte 00
+
+audioin
+  .byte 00, 00
+
+
 
 ;---------------------------------------------------------------
 	include "utils.asm"

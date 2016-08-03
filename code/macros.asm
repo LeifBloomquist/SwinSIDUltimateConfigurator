@@ -55,10 +55,33 @@
   ENDM
 
 ; ==============================================================
-; Macro for border color changes (raster time measure) - erase for no debug
+; Macro for border color changes (raster time measure) - comment for no debug
 ; ==============================================================
 
   MAC BORDER
   ;lda #{1}
   ;sta $d020
   ENDM
+  
+; ==============================================================
+; Macro for saving settings for SwinSID Ultimate
+; ==============================================================
+
+  MAC SAVESETTINGS        
+  ldx config
+  ldy config+1
+  stx {0}
+  sty {0}+1  
+  ENDM
+  
+  
+; ==============================================================
+; Macro for changing cursor colors for SwinSID Ultimate
+; ==============================================================
+
+   MAC CHECKSELECTED  
+   lda {1}
+   ldx #{2}
+   jsr ISSELECTED
+   ENDM
+
