@@ -230,21 +230,51 @@ PRINTCONFIG
   
 ;---------------------------------------------------------------
 MENUSCREEN
-  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN",CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.2", CRLF, CRLF
+  PRINT CS_HOM,CG_DCS, CG_LCS, CG_PNK, "sWIN", CG_YEL, "sid ", CG_WHT, "uLTIMATE ", CG_LBL, "cONFIGURATOR ", CG_LGN, "0.2", CRLF, CRLF
   jsr READSETTINGS
   
   jsr SEPARATOR  
   
-  PRINT CG_BLU, "sid tYPE:   ", CG_YEL, "6", CG_LBL 
+  ; SID Type
+  PRINT CG_BLU, "sid tYPE:   ", CG_YEL, "6" 
+  CHECKSELECTED sidtype, '6                            
+  PRINT "581  ", CG_BLU, "/ ", CG_YEL, "8"
+  CHECKSELECTED sidtype, '8  
+  PRINT "580", CRLF
   
-  CHECKSELECTED sidtype, '6
+  ; Pitch
+  PRINT CG_BLU, "pITCH:      "
+  CHECKSELECTED pitch, 'N
+  PRINT "nt", CG_YEL, "s"
+  CHECKSELECTED pitch, 'N  
+  PRINT "c", CG_BLU, "  / "
+  CHECKSELECTED pitch, 'P
+  PRINT "pa", CG_YEL, "l", CRLF
   
-  PRINT "581  / ", CG_YEL, "8", CG_LBL, "580", CRLF
-  PRINT CG_BLU, "pITCH:      ", CG_LBL, "nt", CG_YEL, "s", CG_LBL, "c  / pa", CG_YEL, "l", CRLF
-  PRINT CG_BLU, "led mODE:   ", CG_YEL, "n", CG_LBL, "OTE  / ", CG_YEL, "i", CG_LBL, "NVERTED / ", CG_YEL, "r", CG_LBL, "w", CRLF
-  PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b", CG_LBL, "EEP  / ", CG_YEL, "m", CG_LBL, "UTE", CRLF
-  PRINT CG_BLU, "aUDIO iN:   ", CG_YEL, "a", CG_LBL, "LLOW / ", CG_YEL, "d", CG_LBL, "ISABLE ", CRLF, CRLF
+  ; LED Mode
+  PRINT CG_BLU, "led mODE:   ", CG_YEL, "n"
+  CHECKSELECTED ledmode, 'N
+  PRINT "OTE  ", CG_BLU, "/ ", CG_YEL, "i" 
+  CHECKSELECTED ledmode, 'I
+  PRINT "NVERTED", CG_BLU, " / ", CG_YEL, "r" 
+  CHECKSELECTED ledmode, 'R
+  PRINT "w", CRLF
   
+  ; Start Beep
+  PRINT CG_BLU, "sTART bEEP: ", CG_YEL, "b" 
+  CHECKSELECTED beep+1, 'E
+  PRINT "EEP", CG_BLU, "  / ", CG_YEL, "m"
+  CHECKSELECTED beep+1, 'D
+  PRINT "UTE", CRLF
+  
+  ; Audio In
+  PRINT CG_BLU, "aUDIO iN:   ", CG_YEL, "a"
+  CHECKSELECTED audioin+1, 'N
+  PRINT "LLOW", CG_BLU, " / ", CG_YEL, "d"
+  CHECKSELECTED audioin+1, 'F
+  PRINT "ISABLE ", CRLF, CRLF
+  
+  ; Mute - TODO
   PRINT CG_BLU, "mUTE:       ", CG_YEL, "0", CG_LBL, " = nO cHANNELS mUTED", CRLF
   PRINT CG_BLU, "            ", CG_YEL, "1", CG_LBL, " = mUTE cHANNEL 1", CRLF
   PRINT CG_BLU, "            ", CG_YEL, "2", CG_LBL, " = mUTE cHANNEL 2", CRLF
@@ -319,7 +349,7 @@ SHOWSETTINGS
   jsr SEPARATOR
   PRINT CRLF    
   
-  PRINT CG_BLU, "pRESS aNY kEY fOR mAIN mENU", CRLF
+  PRINT CG_YEL, "pRESS aNY kEY fOR mAIN mENU", CRLF
   
 wait1
   jsr GETIN
