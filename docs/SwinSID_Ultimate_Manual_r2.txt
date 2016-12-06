@@ -1,0 +1,518 @@
+
+
+
+
+                    S W I N S I D     U L T I M A T E
+                    =================================
+                        (formerly known READELUX)
+
+                               Board r2
+                                  FW U4
+                        
+
+                        U s e r s    M a n u a l
+                        ========================
+
+
+
+
+
+
+
+
+
+
+
+
+credits:
+--------
+                    base work --- Swinkels
+        feature enhancements  --- CodeKiller, Hermit
+        quality improvements  --- Hermit, CodeKiller
+
+
+                manual written by CodeKiller
+
+
+
+
+Introduction
+============
+
+SwinSID Ultimate is a HIGHLY ENHANCED version of the original SwinSID design by Swinkels; so much so, that almost
+the entire code has been rewritten.
+Due to wast differences in 6581 sound, this project aimed to be more like the 8580 (with digi boost), but also has
+support for 6581-like characteristic* (see later)
+
+It has full feature compatibility with the original SID (over the old SwinSID):
+- paddle/mouse support
+- readable registers (OSC3/ENV3)
+- external audio in** (see later)
+- bitfade
+- proper ADSR-bug support
+- fast ADSR attack rate (thanks to the self-correcting rate-counter)
+- 'Lazy Jones' and '180' -like gate and test-bit workaround (no missing note)
+- proper 23bit noise-waveform calculation --> better "random" numbers
+- full 3V p-p output range w/o 1KOhm load (same as 8580)
+
+- improved filter quality (16bit) and resonance-table for both SID model
+- improved waveform calculation (full 16 bit)
+- high resolution combined waveform-tables
+
+
+It has enhancements over the original SID:
+- clean anti-aliased bandlimited sound at high pitches
+- undistorted mixed digi tunes and eliminated volume-change click thanks to AC/DC separation of master volume register
+- Softconfig -- software configurable options for a number of aspects of the operation*** (see later)
+    - change between 8580/6581 behaviour (filter, ADSR, combined waveforms)
+    - change between PAL/NTSC pitch
+    - enable/disable external audio input (less external noise)
+        - if enabled, then CAN be enabled to sample trough OSC3 register
+    - enable/disable startup "ding"(beep)
+    - upload 3 banks of 256 bytes custom waveforms
+    - "transparent" mute for channels -- does not affect the sync, OSC3/ENV3,..
+- LEDs which intensity represents the active channels volume
+- LED displaying the active (classic) digi playback
+- or in case of the new Mahoney-digi, the entire array acts like a VU-meter
++ pin header for external LED driving
++ easily disconnectable internal LEDs
+
+Features from the original (nano) SwinSID:
+- digi-boost for classic digi samples
+- SounDemon digi support (ex: Fanta In Space )
+- lower operation noise (if the external audio in is disabled or terminated)
+- works in every board, only 5V required
+- does not use the filter-capacitors (pins 1-2, 3-4) (values are irrelevant)
+- same form factor as the original SID
+- low power consumption (still after the enhancements)
+- modern components with better ESD protection
++ noise filtering capacitors on PHI2(CLK) and R/W signals (100pF)
++ in-computer firmware update (with safety and integrity checks and recovery mode)
+
+
+
+
+Technical details
+=================
+This module is the same form factor as the original SID (DIP 28) but does not utilise all pins the same way.
+In the place of the pins for the filter capacitor connectors there are two jumpers:
+
+PIN1 -- currently (fw rev: U4) not used but planned to be on-the-fly clock-switch for plus/4 modules
+PIN2 -- not connected
+PIN3-4 -- OPEN(default): normal output volume / CLOSE: reduced output volume 
+        (in some rare cases it may needed if paired up in dual SID...)
+
+!!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!
+The module features 4 solderbridges on it's surface, but for proper operation, only the one marked with LED_en could be altered.
+Changing another ones can damage the module or cause to be inoperatable!
+!!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!  !!!!! ---  WARNING --- !!!!!
+
+The +9/+12V supply is not needed:
+PIN28 (Vdd) -- not connected
+
+PIN27 (Audio out) -- because the sound generation uses phase-correct PWM outputs, theres is a ~72,7kHz carrier at any time
+                        with filtering it's amplitude has been reduced but still can be detected
+                     also, because the module powered from only 5V the output level may be lower than of a normal SID
+                        it is advised if you put it in place of a 6581, remove/disconnect the 1K resistor pulling the output to the ground
+                        
+recommended in place of 6581:
+S  |
+I  |
+D  |
+ 27|-----*---.....
+   |     X <--- disconnect/remove
+   |     '--\/\/\-----,
+              1k      |
+                     ---
+
+PIN26 (Ext in) -- it's not an analog mixing anymore, but goes digital trough an ADC, so can be read/record data by the computer
+                        but because of the construction of the input stage in a C64, there can be a lot of noise coming in if switched on
+                        a termination resistor (for ex 1K) recommended before the AC-coupling capacitor
+
+recommended if ext in required:
+S  |
+I  |
+D  |
+ 26|---------||----*---< ext audio in
+   |               |
+   |               '--\/\/\-----,
+                        1k      |
+                               ---
+
+LED pin header
+--------------
+To utilize the channel visualization from the module better a pin-header has been featured in the rev2 boards.
+!!!! These pins are designed only to supply the signals and NOT TO DRIVE high current LEDs !!!!
+
+Output logic levels are TTL3V3 compatible.
+
+ 1  2 3 4 5 6
+[O] O O O O O
+
+1: GND
+2: voice1
+3: voice2
+4: voice3
+5: digi
+6: +5V
+
+LED_en solderbridge
+-------------------
+This solderbridge connects the GND of the on-board LEDs to the board's GND
+Disconnecting it can disable the on-board LEDs regardless of the softconfig settings.
+
+
+Sound generator
+---------------
+Voice generators:
+------------------
+To simulate the SID chip, the module generates 3 separate voices and a "classic digi" channel in with the master volume bits.
+These waveforms are calculated in 16bit resolution before adjusting the volume and mixing to the output.
+The 6581 compatibility had been greatly improved with the proper ADSR envelope and mixed waveform adjustments 
+beyond the differences of the filter characteristic.
+
+The module has it's own clock source so to generate the proper pitch it has to be set to proper mode.
+Tt can be changed by SoftrConfig commands.
+
+Over the regular waveforms there is a possibility to upload three 256byte long custom sample in place of 3 mixed waveform
+selectable by the control register byte 0x9*, 0xA*, and 0xB*.
+These custom waveforms are responding to the input frequencies the same way as the regular waveforms.
+
+In case of a Mahoney-digi condition has been detected, the module switches to an alternative execution route and reads the
+desired output levels from a data-table.
+
+Selectable operation modes: PAL / NTSC
+Base clock for PAL: 985248Hz
+Base clock for NTSC: 1022727Hz
+Calculation resolution: 16bit
+
+
+Output stage:
+-------------
+The sound output is generated by two phase-correct PWM sources combined.
+The carrier signal is a triangle waveform.
+The output range has been optimised for the timing restriction too.
+The output stage is a dual-PWM combiner with a ratio of 220:1
+
+The lowest response (input register to sound output): 1/36363 =27,5 uSec
+DAC resolution: ~15,5bit (220*220)
+Carrier frequency: 32MHz/220/2= ~72,7kHz
+Sample rate: ~36,3kHz 
+Signal-to-Carrier ratio >20dB (can be improved with further LPFs)
+
+
+LEDs
+----
+This module features an array of 4 LEDs to display informations about the sounds.
+
+Note mode:
+By default, the first 3 LEDs' intensity represents the 3 voice's volume (current ADSR envelope)
+The 4th LED displays if a classic digi has been playing (the 4 bit of master volume)
+
+If the Mahoney-digi condition has been detected, the LEDs act like a VU-meter, displaying the master output level.
+
+
+RW mode:
+In this mode, only the first 2 LEDs working to indicate the register writes and reads.
+This mode is real-time, so the brightness could be really faint.
+
+
+Inverse note mode:
+Due to the LEDs are driven by the CPLD, the sourcing current is much lower than what it could sink.
+So if the LEDs has been added/changed, in this mode it can produce higher brightness.
+
+
+But it's highly recommended to use some proper LED-driver circuit if you need brighter/bigger light output!
+In that case, the driving polarity can be changed to match the requirements of the driver circuit.
+
+
+
+
+
+ADC input
+---------
+Ext in:
+-------
+The external audio input is mixed in to the output digitally after an ADC stage. 
+Therefore it is possible to enable/disable it or if enabled, then record the values by the host.
+
+(f the Mahoney-digi condition has been detected, the ext in audio not processed, not mixed to the master output)
+
+Maximal volume range: 5V AC (peek-to-peek)
+Input offset: 2,5V  (use AC-coupling capacitor)
+Maximal sample rate: 36,3kHz
+Working resolution: ~8bits
+
+
+POTx/y:
+-------
+Electrically works the same as the original SID -- samples the input and compares it to Vcc/2
+It uses it's own clock source. The result of the conversion is available after some data transfer.
+Resetting the module does not resets the comparator's counters.
+
+Capacitor charging time: 256uS
+Capacitor discharge time: 256uS
+Data acquiring delay: ~7uS (during discharge phase)
+Vref= 2.3V
+Discharge current: ~30mA
+
+
+
+Addressing
+----------
+Write to registers:
+-------------------
+Although the proper edge-based register writing can't be handled, with a sufficient precharge time and stable signal
+the module can operate indistinguishable to an original SID. 
+
+After the write conditions met ( PHI2(CLK) low, R/W high, CS low ), the module starts an interrupt 
+ in there it reads the address lines, then the data lines.
+
+Taddr_pre_min   Write condition to address valid: ~170nS
+Taddr_hold      Recommended address valid time:   ~150nS
+Tdata_pre_min   Write condition to address valid: ~200nS
+Tdata_hold      Recommended data valid time:      ~150nS
+Twrt_cnst_min   Time between consecutive writes:  ~700-1000nS
+
+ 
+(please make sure the write conditions does not "flicker")
+(additinal 100pF capacitors cleand the R/W and PHI2(CLK) signals from spilkes and ringing)
+
+
+Reading from registers:
+-----------------------
+Reading the registers however works as expected, valid on the falling edge of the clock.
+OSC3/ENV3 register values updated only once per sample-cycle.
+
+Maximal read response time:     <100nS  (read condition to data valid)
+Maximal data response time:     28uS    (internal data OSC3/ENV3 change to register value)
+
+
+SID model auto-detection
+------------------------
+There has been a few codes aimed to detect the SID type in the C64.
+These relying on a small timing difference between the 8580 and 6581.
+But because this SwinSID can not respond in cycle-exact way, these codes would (usually) thake the 'else' route that means detected as 8580.
+
+Be aware: even if the module set to 6581 mode, these programs will still detect as 8580 which could cause distorted sound!
+
+
+
+Normal operation of the module
+==============================
+
+Normal operation of the module is same as MOS 6581/8580
+
+please refer to the manuals and the tutorials by the C64 community :)
+
+
+
+
+
+
+Special operation of the module
+===============================
+This module features non volatile software-configurable switches and custom waveform options in RAM.
+
+To access these features the remaining, originally unused addresses has been reused.
+Because these addresses are normally not concerned by the SID chip, extra care has been made to reduce the accidental changes.
+
+There are two sets of command: 
+- information from the module (SI*): reading identifications or current states for the switches
+- editing the configuration   (SE*): changing the switches or other behavior of the module
+
+In order to make it less obscure, the codes are mostly 3 byte words where the ASCII code of the letter has to been sent.
+The "words" below represents the bytes needed to enter in to ascending addresses
+
+For example:
+Sending COMMAND:
+poke sidaddr+29, asc("S")
+poke sidaddr+30, asc("I")
+poke sidaddr+31, asc("D")
+
+The order of the rows are not important UNLESS directly stated OTHERWISE!
+(as long the adresses are correct, the following works just the same:
+poke sidaddr+29, asc("S")
+poke sidaddr+31, asc("D")
+poke sidaddr+30, asc("I")
+or
+poke sidaddr+30, asc("I")
+poke sidaddr+31, asc("D")
+poke sidaddr+29, asc("S")
+)
+
+Then reading the module's RESPONSE:
+print chr$(peek(sidaddr+27));chr$(peek(sidaddr+28))
+> SW
+
+
+Most commands has RESPONSE bytes, acknowledging the command has been successfully processed and shows the actual state/information.
+In normal operation the OSC3/ENV3 registers updated regularly, so in order to these responses be readable - 
+The SwinSID stays in SoftConfig mode until 
+- hard reset --- reset pin on the module goes to 0V
+- soft reset (reinit) --- sending the command "SET"
+- setting the sidaddr+29 to anything other than "S"  ---- !!! this keeps the RAM intact !!!
+--- special cases:
+    - exiting 'RAM wave upload mode': sidaddr+29 = 0
+    - entering 'ext in sample record' returns to normal operation
+    - exiting 'ext in sample record' returns to normal operation
+    - reinit after clears the RAM and restarts the main chip returns to normal operation
+
+Exiting the softtconfig does not provide response, also commands that automatically exits from softconfig neither.
+
+Session only changes are only preserved till the next reset!!!
+All other changes are stored in non volatile EEPROM
+
+softconfig commands
+|||
+|||      names, description / RESPONSES (responses are the capital letters == CHR$() ) 
+VVV      VVVVVVVVVV
+softconfig:
+********************************************************
+SI* (softconfig Information)
+----
+SID ____ SW      (identification)
+SIE ____ IN      (identification)
+SIF ____ function as: 65(81) / 85(80)
+SIL ____ led config: RW-NoTe-Inv_Note
+SIV ____ version: $.$ (chr$ characters)
+SIA ____ audio in status: ON / OFf
+SIC ____ clock config: PaL-NtSc(-2M todo)
+
+SIB ____ start beep mode: Beep Enabled / Beep Disabled
+SIM ____ Mute bit-mask % (binary value 0-15) (M %)
+********************************************************
+SE* (softconfig Eprom Edit)  response bytes after #
+----  (+ = default setting)
+SE6 ____ 6581 behaviour #65
+SE8 ____ 8580 behaviour #85 +
+
+SEA ____ allow audio in     #ON
+SED ____ disable audio in   #OF +
+SEE __!!!SESSION ONLY!!!__ valid only for the next reset or reinit
+        ext in sample recording (8bit ADC @ 36.3kHz) 
+        after SEA, it produces:
+            data in OSC3 (8bit signed!)
+      !!!no response!!! auto-exits softconfig !!!
+SEF ____ sampling Finished --- reverts back to normal
+      !!!no response!!! auto-exits softconfig !!!
+
+SEW ____ custom wave input init #RY
+    enters RAM wave upload mode !!!session only!!! reset/reinit clears data!!!
+    to fill the three 256 byte wave-table not used/usable by original SID models
+        addr+29: wave-table select
+                  0: upload finished/return to normal operation
+                1-3: selecting desired custom wave storage for wave 0x9 / 0xA / 0xB
+              4-255: keep in loop, waiting for value below 4
+        addr+30: destination position in the custom wave
+        addr+31: destination value to the position
+
+
+SER ____ led in RW mode         #RW
+SEN ____ led in note mode       #NT +
+SEI ____ led in inv note mode   #IN
+
+SES ____ ntSc pitch #NS
+SEL ____ paL pitch  #PL +
+
+SEB ____ start Beep enable          #BE +
+SEM ____ start beep Mute (disabled) #BD
+
+SET ____ chip reiniT
+      !!!no response!!! auto-exits softconfig !!!
+
+!!!!!!! set the parameter (addr+31) BEFORE the "M" (addr+30) or "S" (addr+29)!!!!!
+SM% ____ mute selected channel bit-mask 1=mute / 0=normal @ bit3=digi, bit2=osc3, bit1=osc2, bit0=osc1      #M%  (same as with SIM )
+        (for exampe parameter=0x05 mute voice3 and voice1 but not voice2 nor classic digi)                                                                                            
+        (the Mahoney-digi can't be muted)
+
+
+
+Extrnal audio input / sampling
+------------------------------
+The extenal audio input featured in original SID models too, but because this module catches more noise if not termianted properly
+it is disabled by default. But if handled with care it can be used all the time, no problem.
+
+The samppling however is not only special to this module, but overrides normal operation of the SID.
+So it can only changed in a volatile way to not interfering with normal operation in different scenarios.
+(or at least a reset can bring it back to a valid SID-compatible state)
+Sampling can be switched on only after the external audio input has been enabled. 
+
+
+Custom waveforms
+----------------
+Custom waveforms are 256 byte long data that can be uploaded to the RAM and can be accessed instead of
+noise+triangle          0x9*
+noise+saw               0xA*
+noise+saw+triangle      0xB*
+
+waveforms. 
+
+select by [sidaddr+29]
+       |
+       V  00 01 02 03 04 05         fc fd fe ff <-- position/offset/pointer/address selected by [siaddr+30]
+c_wawe 1 >xx xx xx xx xx xx  ...... xx xx xx xx <-- data entered from [sidaddr+31]
+c_wave 2 >xx xx xx xx xx xx  ...... xx xx xx xx
+c_wave 3 >xx xx xx xx xx xx  ...... xx xx xx xx
+
+
+All 3 voices can access any 3 custom wave. 
+(obviously only one wave per voice at any moment, mixing with existing waveforms or with custom waves are not possible)
+
+Pitch (frequency), ADSR, filter, master volume supported (PWM not)
+
+
+Recommended filling sequence:
+    (while wave-table select is invalid -- "S" remains after entering custom wave mode)
+    set position beginning [or end]
+    set value
+    select wave-table
+    while position is not end [or beginning]
+        set position+= [or -=] 1
+        set value
+
+Data loading is not synchronous!
+It's not predictable when the entered values takes effect.
+But due to very short loop, expect all value to be evaluated faster than you can send them!
+(changing the address causes the value at the new address to be overwritten by the old value)
+ 
+for example:
+------------
+Start
+-----
+sidaddr+29=1  =wave-table select
+sidaddr+30=0  =postition
+sidaddr+31=10 =value
+
+c_wave1:
+addr: 00 01 02 03 ....
+data: 10 xx xx xx ....
+
+position+=1
+-----------
+c_wave1:
+addr: 00 01 02 03 ....
+data: 10 10 xx xx ....
+
+value=30
+--------
+c_wave1:
+addr: 00 01 02 03 ....
+data: 10 30 xx xx ....
+
+
+
+Firmware update
+---------------
+These modules equipped with self-programming code to update firmware inside a C64/128/..
+The update procedure requires a special sequence to be initialized.
+!!! After the firmware updater has been initialized permanetly enters the firmware update mode
+until a valid firmware has been fully uploaded and accepted !!!!
+
+
+
+
+
+
+
+Document rev. 1.2
